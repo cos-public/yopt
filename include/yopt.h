@@ -30,7 +30,7 @@ class options {
 public:
 	using char_type = CharT;
 
-	options(int argc, const CharT ** argv) {
+	options(int argc, const CharT * const * argv) {
 		/// start from 1 - skip program name
 		for (int i = 1; i < argc; i++) {
 			parse(argv[i], true);
@@ -270,7 +270,7 @@ private:
 		return (c == '=');
 	}
 
-	static inline constexpr std::basic_string<CharT> make_string(auto * s) {
+	static inline constexpr std::basic_string<CharT> make_string(const char * s) {
 		size_t len = 0;
 		const auto * const str = s;
 		while (*s++) {
@@ -347,12 +347,12 @@ TEST_CASE("options wchar_t") {
 	yopt::options o{command_line};
 	CHECK(o.arg_count() == 1);
 	CHECK(o.arg(0) == L"first quoted argument");
-	CHECK_THROWS_AS(o.arg(1), const std::out_of_range &);
+	CHECK_THROWS_AS(auto discard = o.arg(1), const std::out_of_range &);
 	CHECK(o.has_opt("nonexistent") == false);
 	CHECK(o.has_opt("first-option"));
 	CHECK(o.has_opt("second-option"));
 	CHECK(o.get_bool("first-option"));
-	CHECK_THROWS_AS(o.get_required_string("nonexistent"), const std::out_of_range &);
+	CHECK_THROWS_AS(auto discard = o.get_required_string("nonexistent"), const std::out_of_range &);
 	CHECK(o.get_string("first-option").has_value());
 	CHECK(o.get_string("first-option").value() == L"");
 	CHECK(o.get_string("second-option").value() == L"value");
@@ -397,6 +397,8 @@ TEST_CASE("options argv") {
 	CHECK(o.has_opt("u"));
 	CHECK(o.get_int("t").has_value());
 	CHECK(o.get_int("t").value() == 42);
+	const char t_param[] = "t";
+	CHECK_THROWS_AS(auto discard = o.get_bool(t_param), std::invalid_argument);
 }
 
 #endif //YOPT_TEST
