@@ -287,13 +287,13 @@ private:
 };
 
 template <>
-auto options<wchar_t>::find_opt(std::string_view key) const {
+inline auto options<wchar_t>::find_opt(std::string_view key) const {
 	const std::wstring wkey{std::begin(key), std::end(key)};
 	return opts.find(wkey);
 }
 
 template <>
-auto options<char>::find_opt(std::string_view key) const {
+inline auto options<char>::find_opt(std::string_view key) const {
 	return opts.find(key);
 }
 
