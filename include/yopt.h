@@ -34,7 +34,7 @@ public:
 		/// start from 1 - skip program name
 		for (int i = 1; i < argc; i++) {
 			parse(argv[i], true);
-		} 
+		}
 	}
 
 	options(const CharT * cmd_line) {
@@ -45,22 +45,24 @@ public:
 		return find_opt(key) != std::end(opts);
 	}
 
-	[[nodiscard]] inline std::optional<std::basic_string_view<CharT>> get_string(std::string_view key) const noexcept {
+	[[nodiscard]] inline std::optional<std::basic_string_view<CharT>> get_native_string(std::string_view key) const noexcept {
 		const auto it = find_opt(key);
 		if (it == std::end(opts))
 			return std::nullopt;
 		return it->second;
 	}
 
-	[[nodiscard]] inline std::basic_string_view<CharT> get_string(std::string_view key, std::basic_string_view<CharT> default_value) const noexcept {
-		const auto v = get_string(key);
+	[[nodiscard]] inline std::optional<std::string> get_string(std::string_view key) const noexcept;
+
+	[[nodiscard]] inline std::basic_string_view<CharT> get_native_string(std::string_view key, std::basic_string_view<CharT> default_value) const noexcept {
+		const auto v = get_native_string(key);
 		if (!v)
 			return default_value;
 		return *v;
 	}
 
-	[[nodiscard]] inline std::basic_string_view<CharT> get_required_string(std::string_view key) const {
-		const auto v = get_string(key);
+	[[nodiscard]] inline std::basic_string_view<CharT> get_required_native_string(std::string_view key) const {
+		const auto v = get_native_string(key);
 		if (!v.has_value()) {
 			throw std::out_of_range("option not provided");
 		}
@@ -68,7 +70,7 @@ public:
 	}
 
 	[[nodiscard]] bool get_bool(std::string_view key, bool default_value = false) const {
-		const auto v = get_string(key);
+		const auto v = get_native_string(key);
 		if (!v)
 			return default_value;
 		const auto & s = v.value();
@@ -104,7 +106,7 @@ public:
 	}
 
 	[[nodiscard]] inline std::optional<int> get_int(std::string_view key) const noexcept {
-		const auto v = get_string(key);
+		const auto v = get_native_string(key);
 		if (!v)
 			return std::nullopt;
 		const auto & sv = v.value();
@@ -297,6 +299,23 @@ inline auto options<char>::find_opt(std::string_view key) const {
 	return opts.find(key);
 }
 
+template <>
+[[nodiscard]] inline std::optional<std::string> options<char>::get_string(std::string_view key) const noexcept {
+	const auto s = get_native_string(key);
+	if (s.has_value()) {
+		return std::string{s.value()};
+	}
+	return std::nullopt;
+}
+
+template <>
+[[nodiscard]] inline std::optional<std::string> options<wchar_t>::get_string(std::string_view key) const noexcept {
+	const auto s = get_native_string(key);
+	if (s.has_value()) {
+		return detail::wstrtoutf8(s.value());
+	}
+	return std::nullopt;
+}
 
 template <typename CharT>
 inline std::basic_string_view<CharT> strip_quotes(const std::basic_string_view<CharT> & s) {
