@@ -337,6 +337,8 @@ namespace detail {
 #if defined _WIN32
 inline std::optional<std::string> wstrtoutf8(const std::wstring_view & s) {
 	assert(s.size() < std::numeric_limits<int>::max());
+	if (s.size() == 0)
+		return std::string{};
 	const auto size = (int) s.size();
 	const auto converted_size = ::WideCharToMultiByte(CP_UTF8, 0, s.data(), size, 0, 0, NULL, NULL);
 	if (converted_size == 0)
@@ -371,10 +373,10 @@ TEST_CASE("options wchar_t") {
 	CHECK(o.has_opt("first-option"));
 	CHECK(o.has_opt("second-option"));
 	CHECK(o.get_bool("first-option"));
-	CHECK_THROWS_AS(auto discard = o.get_required_string("nonexistent"), const std::out_of_range &);
+	CHECK_THROWS_AS(auto discard = o.get_required_native_string("nonexistent"), const std::out_of_range &);
 	CHECK(o.get_string("first-option").has_value());
-	CHECK(o.get_string("first-option").value() == L"");
-	CHECK(o.get_string("second-option").value() == L"value");
+	CHECK(o.get_native_string("first-option").value() == L"");
+	CHECK(o.get_native_string("second-option").value() == L"value");
 }
 
 TEST_CASE("options bool") {
@@ -398,7 +400,7 @@ TEST_CASE("options bool") {
 TEST_CASE("options escaping") {
 	yopt::options o{"--t=\"x x\" \"x x x\""};
 	CHECK(o.arg(0) == "x x x");
-	CHECK(o.get_required_string("t") == "x x");
+	CHECK(o.get_required_native_string("t") == "x x");
 }
 
 TEST_CASE("options argv") {
