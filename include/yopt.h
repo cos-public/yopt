@@ -106,18 +106,13 @@ public:
 	}
 
 	[[nodiscard]] inline std::optional<int> get_int(std::string_view key) const noexcept {
-		const auto v = get_native_string(key);
+		const auto v = get_string(key);
 		if (!v)
 			return std::nullopt;
 		const auto & sv = v.value();
 		int value = 0;
 		std::from_chars_result r;
-		if constexpr (std::is_same_v<CharT, wchar_t>) {
-			const std::string s = wstrtoutf8(sv);
-			r = std::from_chars(s.data(), s.data() + s.size(), value);
-		} else {
-			r = std::from_chars(sv.data(), sv.data() + sv.size(), value);
-		}
+		r = std::from_chars(sv.data(), sv.data() + sv.size(), value);
 		if (r.ec == std::errc())
 			return value;
 		return std::nullopt;
